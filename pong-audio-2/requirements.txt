@@ -1,0 +1,7 @@
+aubio==0.4.9
+numpy==1.21.3
+playsound==1.3.0
+PyAudio==0.2.11
+pyglet==1.5.21
+SpeechRecognition==3.8.1
+python-osc==1.8.0
