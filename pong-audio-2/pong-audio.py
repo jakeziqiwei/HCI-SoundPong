@@ -235,18 +235,25 @@ def listen_to_speech():
             # if recognizing quit and exit then exit the program
             if recog_results == "play" or recog_results == "start":
                 client.send_message('/g', 1)
+                playsound('play.mp3')
             if recog_results == "pause":
                 client.send_message('/g', 0)
+                playsound('paused.mp3')
             if recog_results == "resume":
                 client.send_message('/g', 1)
+                playsound('resuming.mph3')
             if recog_results == "easy":
                 client.send_message('/l',1)
+                playsound('leveleasy')
             if recog_results == "hard":
                 client.send_message('/l',2)
+                playsound('levelHard.mp3')
             if recog_results == "insane":
                 client.send_message('/l',3)
+                playsound('levelIsane.mp3')
             if recog_results == "quit":
                 quit = True
+                playsound('quit.mp3')
         except sr.UnknownValueError:
             print("[speech recognition] Google Speech Recognition could not understand audio")
         except sr.RequestError as e:
