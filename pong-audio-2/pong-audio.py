@@ -1,26 +1,19 @@
 """
     Based on: https://gist.github.com/xjcl/8ce64008710128f3a076
     Modified by PedroLopes and ShanYuanTeng for Intro to HCI class but credit remains with author
-
     HOW TO RUN HOST LOCALLY:
     > python3 pong-audio.py host
-
     HOW TO RUN HOST FOR CONNECTION:
     > python3 pong-audio.py host --host_ip 127.0.0.1
-
     HOW TO PLAY ON HOST VISUALLY: 
     Play like a regular pong:
     Player 1 controls the left paddle: UP (W) DOWN (S)
     Player 2 controls the right paddle: UP (O) DOWN (L)
-
     HOW TO CONNECT TO HOST AS PLAYER 1
     > python3 pong-audio.py player --host_ip 127.0.0.1 --host_port 5005 --player_ip 127.0.0.1 --player_port 5007
-
     HOW TO CONNECT TO HOST AS PLAYER 2
     > python3 pong-audio.py player --host_ip 127.0.0.1 --host_port 5006 --player_ip 127.0.0.1 --player_port 5008
-
     about IP and ports: 127.0.0.1 means your own computer, change it to play across computer under the same network. port numbers are picked to avoid conflits.
-
     CODE YOUR AUDIO CONTROL FOR PLAYER!
     
     p.s.: this needs 10x10 image in the same directory: "white_square.png".
@@ -242,6 +235,18 @@ def listen_to_speech():
             # if recognizing quit and exit then exit the program
             if recog_results == "play" or recog_results == "start":
                 client.send_message('/g', 1)
+            if recog_results == "pause":
+                client.send_message('/g', 0)
+            if recog_results == "resume":
+                client.send_message('/g', 1)
+            if recog_results == "easy":
+                client.send_message('/l',1)
+            if recog_results == "hard":
+                client.send_message('/l',2)
+            if recog_results == "insane":
+                client.send_message('/l',3)
+            if recog_results == "quit":
+                quit = True
         except sr.UnknownValueError:
             print("[speech recognition] Google Speech Recognition could not understand audio")
         except sr.RequestError as e:
@@ -430,7 +435,6 @@ class Model(object):
             Update ball position with post-collision detection.
             I.e. Let the ball move out of bounds and calculate
             where it should have been within bounds.
-
             When bouncing off a paddle, take player velocity into
             consideration as well. Add a small factor of random too.
         """
