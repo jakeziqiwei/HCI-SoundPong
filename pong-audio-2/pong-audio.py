@@ -244,7 +244,7 @@ def listen_to_speech():
                 playsound('resuming.mph3')
             if recog_results == "easy":
                 client.send_message('/l',1)
-                playsound('leveleasy')
+                playsound('levelEasy.mp3')
             if recog_results == "hard":
                 client.send_message('/l',2)
                 playsound('levelHard.mp3')
@@ -278,7 +278,8 @@ def sense_microphone():
         # Format the volume output so that at most
         # it has six decimal numbers.
         volume = "{:.6f}".format(volume)
-
+        if volume != 0: 
+            client.send_message('/p',float(pitch))
         # uncomment these lines if you want pitch or volume
         if debug:
             print("pitch "+str(pitch)+" volume "+str(volume))
