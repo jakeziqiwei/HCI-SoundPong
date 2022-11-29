@@ -278,13 +278,24 @@ def sense_microphone():
         # Format the volume output so that at most
         # it has six decimal numbers.
         volume = "{:.6f}".format(volume)
-        if volume != 0 or pitch != 0:
-            scaled = (pitch - 150) * (450 / 250-150)
-            if scaled > 0 and scaled < 450: 
-                client.send_message('/p',float(scaled))
+        #low = 80 
+        #high = 300
+        #box height = 0 - 450
+        scaled_pitch = pitch - 100 * (430 / (300-80))+200
+        if float(volume) != 0:
+            if pitch != 0 and scaled_pitch > 0 and scaled_pitch < 450:
+                client.send_message('/p',scaled_pitch) 
+                 
+            
+        # if volume != 0 or pitch != 0: 
+        #     scaled_pitch =  pitch - 80 * (435 / (300-80))+200
+        #     if scaled_pitch > 0 and scaled_pitch < 435:
+        #         client.send_message('/p',scaled_pitch)
+        #         print("Scaled" + str(scaled_pitch))
         # uncomment these lines if you want pitch or volume
+        print("pitch "+str(pitch)+" volume "+str(volume))
         if debug:
-            print("pitch "+str(pitch)+" volume "+str(volume))
+             print("pitch "+str(pitch)+" volume "+str(volume))
 # -------------------------------------#
 
 # Host game mechanics: no need to change below
