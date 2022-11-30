@@ -4,13 +4,13 @@
     HOW TO RUN HOST LOCALLY:
     > python3 pong-audio.py host
     HOW TO RUN HOST FOR CONNECTION:
-    > python3 pong-audio.py host --host_ip 127.0.0.1
+    > python3 pong-audio.py host --host_ip 128.135.203.42
     HOW TO PLAY ON HOST VISUALLY: 
     Play like a regular pong:
     Player 1 controls the left paddle: UP (W) DOWN (S)
     Player 2 controls the right paddle: UP (O) DOWN (L)
     HOW TO CONNECT TO HOST AS PLAYER 1
-    > python3 pong-audio.py player --host_ip 127.0.0.1 --host_port 5005 --player_ip 127.0.0.1 --player_port 5007
+    > python3 pong-audio.py player --host_ip 128.135.203.42 --host_port 5005 --player_ip 127.0.0.1 --player_port 5007
     HOW TO CONNECT TO HOST AS PLAYER 2
     > python3 pong-audio.py player --host_ip 127.0.0.1 --host_port 5006 --player_ip 127.0.0.1 --player_port 5008
     about IP and ports: 127.0.0.1 means your own computer, change it to play across computer under the same network. port numbers are picked to avoid conflits.
@@ -715,9 +715,15 @@ if mode == 'player':
     microphone_thread.daemon = True
     microphone_thread.start()
     # -------------------------------------#
-    # synth_thread = threading.Thread(target=on_receive_ball, args=[1])
-    # synth_thread.daemon = True
-    # synth_thread.start()
+    if client_1:
+        synth_thread = threading.Thread(target=on_receive_ball, args=[1])
+        synth_thread.daemon = True
+        synth_thread.start()
+    if client_2:
+        synth_thread = threading.Thread(target=on_receive_ball, args=[1])
+        synth_thread.daemon = True
+        synth_thread.start() 
+
 
 # Host: pygame starts
 if mode == 'host':
