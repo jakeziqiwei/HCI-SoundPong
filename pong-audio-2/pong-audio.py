@@ -149,7 +149,11 @@ def text2speech(text):
     playsound("sound.mp3")
 
 def hit():
-    playsound('hit.wav', False)
+    text2speech("hit")
+
+
+def score():
+    playsound("goal.mp4")
 
 # used to send messages to host
 if mode == 'player':
@@ -175,22 +179,23 @@ def on_receive_hitpaddle(address, *args):
     print("> ball hit at paddle " + str(args[0]) )
 
 def on_receive_ballout(address, *args):
-    text2speech("ball went out on left/right side: " + str(args[0]))
+    score()
     print("> ball went out on left/right side: " + str(args[0]) )
 
 def on_receive_ballbounce(address, *args):
     # example sound
     hit()
-    text2speech("ball bounced on up/down side: " + str(args[0]))
+    text2speech("ball bounced")
     print("> ball bounced on up/down side: " + str(args[0]) )
 
 def on_receive_scores(address, *args):
     text2speech(str(args[0]) + " vs. " + str(args[1]))
-    print("> scores now: " + str(args[0]) + " vs. " + str(args[1]))
+    print("> scores now: " + str(args[0]) + " to " + str(args[1]))
 
 def on_receive_level(address, *args):
     print("> level now: " + str(args[0]))
 
+    
 dispatcher_player = dispatcher.Dispatcher()
 dispatcher_player.map("/ball", on_receive_ball)
 dispatcher_player.map("/paddle", on_receive_paddle)
