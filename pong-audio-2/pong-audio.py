@@ -103,9 +103,9 @@ client_1 = None
 client_2 = None
 
 # sinewave = SineWave(pitch = 12, pitch_per_second = 50, decibels_per_second = 10000)
-player = Player()
-player.open_stream()
-synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=0.3, use_osc2=False)
+# player = Player()
+# player.open_stream()
+# synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=0.3, use_osc2=False)
 
 # functions receiving messages from players (game control etc)
 def on_receive_game_level(address, args, l):
@@ -174,34 +174,33 @@ def hit():
 def score():
     playsound("goal.mp3",True)
 
-
+player = Player()
+player.open_stream()
+synth = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=0.3, use_osc2=False)
 
 # used to send messages to host
 if mode == 'player':
     client = udp_client.SimpleUDPClient(host_ip, host_port)
     print("> connected to server at "+host_ip+":"+str(host_port))
 
-threadcheck = threading.Lock()
+is_playing = threading.Lock()
 
-def locate(pitch):
-    global threadcheck
-    if threadcheck.locked(): pass
-    else: 
-        def sound(pitch):
-            global threadcheck
-            with threadcheck:
-                player.play_wave(synthesizer.generate_constant_wave(pitch, .1))
-        threading.Thread(target=lambda:sound(pitch)).start()
+def ball_locator(pitch, time):
+    global is_playing
+    if is_playing.locked(): pass
+    else:
+        def start_sound(pitch,time):
+            global is_playing
+            with is_playing:
+                player.play_wave(synth.generate_constant_wave(pitch, time))
+        threading.Thread(target=lambda: start_sound(pitch, time)).start()
 
 # functions receiving messages from host
 def on_receive_ball(address, *args):
     print("> ball position: (" + str(args[0]) + ", " + str(args[1]) + ")")
     #find the pitch to play
     ball_pitch = (args[1]/450)*150+100
-    # sinewave.set_pitch(ball_pitch)
-    # sinewave.set_volume(min(350,args[0]))
-    # print(ball_pitch)
-    locate(ball_pitch)
+    ball_locator(ball_pitch)
     pass
 
 def on_receive_paddle(address, *args):
