@@ -129,7 +129,7 @@ def on_receive_connection_1(address, args, ip):
     global player_1_ip
     player_1_ip = ip
     client_1 = udp_client.SimpleUDPClient(player_1_ip, player_1_port)
-    text2speech("you are player 1, say instructions to get started")
+    text2speech("Player 1 joined, say instructions to get started")
     print("> player 1 connected: " + ip)
 
 def on_receive_paddle_2(address, args, paddle):
@@ -141,7 +141,7 @@ def on_receive_connection_2(address, args, ip):
     global player_2_ip
     player_2_ip = ip
     client_2 = udp_client.SimpleUDPClient(player_2_ip, player_2_port)
-    text2speech("you are player 2,say instructions to get started")
+    text2speech("player 2 joined,say instructions to get started")
     print("> player 2 connected: " + ip)
 
 dispatcher_1 = dispatcher.Dispatcher()
