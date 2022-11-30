@@ -182,7 +182,7 @@ if mode == 'player':
 
 threadCheck = threading.Lock()
 
-def locate(pitch, time):
+def locate(pitch):
     global threadCheck
     if threadCheck.locked(): pass
     else:
