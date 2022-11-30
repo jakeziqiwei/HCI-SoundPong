@@ -34,6 +34,24 @@ from pythonosc import udp_client
 from gtts import gTTS
 import os
 
+# -------------------------------------#
+
+# Player: speech recognition library
+# -------------------------------------#
+# threading so that listenting to speech would not block the whole program
+import threading
+# speech recognition (default using google, requiring internet)
+import speech_recognition as sr
+# -------------------------------------#
+
+# Player: pitch & volume detection
+# -------------------------------------#
+import aubio
+import numpy as num
+import pyaudio
+import wave
+
+
 mode = ''
 debug = False
 
@@ -156,6 +174,18 @@ def hit():
 def score():
     playsound("goal.mp3",True)
 
+threadcheck = threading.lock()
+
+def locate(pitch):
+    global threadcheck
+    if threadcheck.locked(): pass
+    else: 
+        def start_sound(pitch):
+            global threadcheck
+            with threadcheck:
+                player.play_wave(synthesizer.generate_constant_wave(pitch, .02))
+        threading.Thread(target=lambda:start_sound(pitch)).start()
+
 # used to send messages to host
 if mode == 'player':
     client = udp_client.SimpleUDPClient(host_ip, host_port)
@@ -169,7 +199,7 @@ def on_receive_ball(address, *args):
     # sinewave.set_pitch(ball_pitch)
     # sinewave.set_volume(min(350,args[0]))
     # print(ball_pitch)
-    player.play_wave(synthesizer.generate_constant_wave(ball_pitch, .02))
+    locate(ball_pitch)
     pass
 
 def on_receive_paddle(address, *args):
@@ -210,22 +240,7 @@ dispatcher_player.map("/ballbounce", on_receive_ballbounce)
 dispatcher_player.map("/hitpaddle", on_receive_hitpaddle)
 dispatcher_player.map("/scores", on_receive_scores)
 dispatcher_player.map("/level", on_receive_level)
-# -------------------------------------#
 
-# Player: speech recognition library
-# -------------------------------------#
-# threading so that listenting to speech would not block the whole program
-import threading
-# speech recognition (default using google, requiring internet)
-import speech_recognition as sr
-# -------------------------------------#
-
-# Player: pitch & volume detection
-# -------------------------------------#
-import aubio
-import numpy as num
-import pyaudio
-import wave
 
 # PyAudio object.
 p = pyaudio.PyAudio()
@@ -246,6 +261,7 @@ quit = False
 # keeping score of points:
 p1_score = 0
 p2_score = 0
+
 
 
 # Player: speech recognition functions using google api
