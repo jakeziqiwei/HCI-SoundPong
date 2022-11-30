@@ -103,9 +103,9 @@ client_1 = None
 client_2 = None
 
 # sinewave = SineWave(pitch = 12, pitch_per_second = 50, decibels_per_second = 10000)
-# player = Player()
-# player.open_stream()
-# synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=0.3, use_osc2=False)
+player = Player()
+player.open_stream()
+synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=0.3, use_osc2=False)
 
 # functions receiving messages from players (game control etc)
 def on_receive_game_level(address, args, l):
@@ -174,33 +174,30 @@ def hit():
 def score():
     playsound("goal.mp3",True)
 
-player = Player()
-player.open_stream()
-synth = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=0.3, use_osc2=False)
 
 # used to send messages to host
 if mode == 'player':
     client = udp_client.SimpleUDPClient(host_ip, host_port)
     print("> connected to server at "+host_ip+":"+str(host_port))
 
-is_playing = threading.Lock()
+threadCheck = threading.Lock()
 
-def ball_locator(pitch, time):
-    global is_playing
-    if is_playing.locked(): pass
+def locate(pitch, time):
+    global threadCheck
+    if threadCheck.locked(): pass
     else:
-        def start_sound(pitch,time):
-            global is_playing
-            with is_playing:
-                player.play_wave(synth.generate_constant_wave(pitch, time))
-        threading.Thread(target=lambda: start_sound(pitch, time)).start()
+        def sounding(pitch,time):
+            global threadCheck
+            with threadCheck:
+                player.play_wave(synthesizer.generate_constant_wave(pitch, time))
+        threading.Thread(target=lambda: sounding(pitch, .02)).start()
 
 # functions receiving messages from host
 def on_receive_ball(address, *args):
     print("> ball position: (" + str(args[0]) + ", " + str(args[1]) + ")")
     #find the pitch to play
     ball_pitch = (args[1]/450)*150+100
-    ball_locator(ball_pitch)
+    locate(ball_pitch)
     pass
 
 def on_receive_paddle(address, *args):
@@ -210,9 +207,8 @@ def on_receive_paddle(address, *args):
 def on_receive_hitpaddle(address, *args):
     # example sound
 
-    text2speech("paddle" + str(args[0]))
-    hit()
-    print("> ball hit at paddle " + str(args[0]) )
+    text2speech("paddle" + str(args[0]) + "hit")
+    print("> ball hit at paddle " + str(args[0]))
 
 def on_receive_ballout(address, *args):
     # score()
@@ -739,7 +735,7 @@ if mode == 'player':
     if client_2:
         synth_thread2 = threading.Thread(target=on_receive_ball, args=[2])
         synth_thread2.daemon = True
-        synth_thread.start() 
+        synth_thread2.start() 
 
 
 # Host: pygame starts
