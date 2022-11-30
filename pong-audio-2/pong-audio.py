@@ -190,7 +190,7 @@ def locate(pitch):
             global threadCheck
             with threadCheck:
                 player.play_wave(synthesizer.generate_constant_wave(pitch, .02))
-        threading.Thread(target=lambda: sounding(pitch, .02)).start()
+        threading.Thread(target=lambda: sounding(pitch)).start()
 
 # functions receiving messages from host
 def on_receive_ball(address, *args):
