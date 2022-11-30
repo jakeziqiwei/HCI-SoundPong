@@ -12,10 +12,11 @@
     HOW TO CONNECT TO HOST AS PLAYER 1
     > python3 pong-audio.py player --host_ip 127.0.0.1 --host_port 5005 --player_ip 127.0.0.1 --player_port 5007
     HOW TO CONNECT TO HOST AS PLAYER 2
-    > python3 pong-audio.py player --host_ip 127.0.0.1 --host_port 5006 --player_ip 127.0.0.1 --player_port 500                    8
+    > python3 pong-audio.py player --host_ip 127.0.0.1 --host_port 5006 --player_ip 127.0.0.1 --player_port 5008
     about IP and ports: 127.0.0.1 means your own computer, change it to play across computer under the same network. port numbers are picked to avoid conflits.
     CODE YOUR AUDIO CONTROL FOR PLAYER!
     
+    python3 pong-audio.py player --host_ip 10.150.13.245 --host_port 5006 --player_ip 128.135.203.42 --player_port 5008
     p.s.: this needs 10x10 image in the same directory: "white_square.png".
 """
 #native imports
@@ -86,7 +87,7 @@ client_2 = None
 # sinewave = SineWave(pitch = 12, pitch_per_second = 50, decibels_per_second = 10000)
 player = Player()
 player.open_stream()
-synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=1.0, use_osc2=False)
+synthesizer = Synthesizer(osc1_waveform=Waveform.triangle, osc1_volume=0.3, use_osc2=False)
 
 # functions receiving messages from players (game control etc)
 def on_receive_game_level(address, args, l):
@@ -287,6 +288,7 @@ def listen_to_speech():
             if recog_results == "quit":
                 quit = True
                 playsound('quit.mp3')
+                exit(0)
             if recog_results == "instruction":
                 playsound("instructions.mp3",True)
         except sr.UnknownValueError:
