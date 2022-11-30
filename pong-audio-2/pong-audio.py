@@ -186,10 +186,10 @@ def locate(pitch):
     global threadCheck
     if threadCheck.locked(): pass
     else:
-        def sounding(pitch,time):
+        def sounding(pitch):
             global threadCheck
             with threadCheck:
-                player.play_wave(synthesizer.generate_constant_wave(pitch, time))
+                player.play_wave(synthesizer.generate_constant_wave(pitch, .02))
         threading.Thread(target=lambda: sounding(pitch, .02)).start()
 
 # functions receiving messages from host
