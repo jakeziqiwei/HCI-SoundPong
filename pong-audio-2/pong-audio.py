@@ -105,7 +105,7 @@ client_2 = None
 # sinewave = SineWave(pitch = 12, pitch_per_second = 50, decibels_per_second = 10000)
 player = Player()
 player.open_stream()
-synthesizer = Synthesizer(osc1_waveform=Waveform.triangle, osc1_volume=0.3, use_osc2=False)
+synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=0.3, use_osc2=False)
 
 # functions receiving messages from players (game control etc)
 def on_receive_game_level(address, args, l):
@@ -176,6 +176,11 @@ def score():
 
 threadcheck = threading.Lock()
 
+# used to send messages to host
+if mode == 'player':
+    client = udp_client.SimpleUDPClient(host_ip, host_port)
+    print("> connected to server at "+host_ip+":"+str(host_port))
+
 def locate(pitch):
     global threadcheck
     if threadcheck.locked(): pass
@@ -185,11 +190,6 @@ def locate(pitch):
             with threadcheck:
                 player.play_wave(synthesizer.generate_constant_wave(pitch, .02))
         threading.Thread(target=lambda:start_sound(pitch)).start()
-
-# used to send messages to host
-if mode == 'player':
-    client = udp_client.SimpleUDPClient(host_ip, host_port)
-    print("> connected to server at "+host_ip+":"+str(host_port))
 
 # functions receiving messages from host
 def on_receive_ball(address, *args):
