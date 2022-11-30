@@ -23,6 +23,7 @@ import math
 import random
 import pyglet
 import sys
+from pysinewave import SineWave
 from synthesizer import Player, Synthesizer, Waveform
 from playsound import playsound
 import argparse
@@ -83,10 +84,10 @@ if __name__ == '__main__' :
 client_1 = None
 client_2 = None
 
-
-player = Player()
-player.open_stream()
-synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=1.0, use_osc2=False)
+sinewave = SineWave(pitch = 12, pitch_per_second = 50, decibels_per_second = 10000)
+# player = Player()
+# player.open_stream()
+# synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=1.0, use_osc2=False)
 
 # functions receiving messages from players (game control etc)
 def on_receive_game_level(address, args, l):
@@ -153,7 +154,7 @@ def hit():
 
 
 def score():
-    playsound("goal.mp4")
+    playsound("goal.mp3")
 
 # used to send messages to host
 if mode == 'player':
@@ -164,8 +165,11 @@ if mode == 'player':
 def on_receive_ball(address, *args):
     print("> ball position: (" + str(args[0]) + ", " + str(args[1]) + ")")
     #find the pitch to play
-    ball_pitch = (args[1]/450)*200+100
-    player.play_wave(synthesizer.generate_constant_wave(ball_pitch, .02))
+    ball_pitch = (args[1]/450)*150+100
+    sinewave.set_pitch(ball_pitch)
+    sinewave.set_volume(args[0])
+    print(ball_pitch)
+    # player.play_wave(synthesizer.generate_constant_wave(ball_pitch, .02))
     pass
 
 def on_receive_paddle(address, *args):
@@ -174,22 +178,22 @@ def on_receive_paddle(address, *args):
 
 def on_receive_hitpaddle(address, *args):
     # example sound
+
+    text2speech("paddle" + str(args[0]))
     hit()
-    text2speech("> ball hit at paddle " + str(args[0]))
     print("> ball hit at paddle " + str(args[0]) )
 
 def on_receive_ballout(address, *args):
-    score()
+    # score()
     print("> ball went out on left/right side: " + str(args[0]) )
 
 def on_receive_ballbounce(address, *args):
     # example sound
-    hit()
     text2speech("ball bounced")
     print("> ball bounced on up/down side: " + str(args[0]) )
 
 def on_receive_scores(address, *args):
-    text2speech(str(args[0]) + " vs. " + str(args[1]))
+    text2speech("score" + str(args[0]) + " to " + str(args[1]))
     print("> scores now: " + str(args[0]) + " to " + str(args[1]))
 
 def on_receive_level(address, *args):
@@ -499,16 +503,21 @@ class Model(object):
             client_1.send_message("/ball", [b.x, b.y])
         if (client_2 != None):
             client_2.send_message("/ball", [b.x, b.y])
+        # ball_pitch = (b.y/450)*200+100
+        # print(ball_pitch)
+        # sinewave.set_pitch(ball_pitch)
     
 
     def toggle_menu(self):
         global game_start
         if (self.menu != 0):
             self.menu = 0
+            sinewave.stop()
             game_start = 0
             self.paused = True
         else:
             self.menu = 1
+            sinewave.play()
             game_start = 1
             self.paused = False
 
