@@ -146,7 +146,7 @@ dispatcher_2.map("/c", on_receive_connection_2, "c")
 def text2speech(text):
     speech = gTTS(text,lang="en",slow=False)
     speech.save("sound.mp3")
-    playsound("sound.mph3")
+    playsound("sound.mp3")
 
 def hit():
     playsound('hit.wav', False)
@@ -264,7 +264,7 @@ def listen_to_speech():
                 playsound('paused.mp3')
             if recog_results == "resume":
                 client.send_message('/g', 1)
-                playsound('resuming.mph3')
+                playsound('resuming.mp3')
             if recog_results == "easy":
                 client.send_message('/l',1)
                 playsound('levelEasy.mp3')
@@ -278,7 +278,7 @@ def listen_to_speech():
                 quit = True
                 playsound('quit.mp3')
             if recog_results == "instruction":
-                playsound("instructions.mph3")
+                playsound("instructions.mp3")
         except sr.UnknownValueError:
             print("[speech recognition] Google Speech Recognition could not understand audio")
         except sr.RequestError as e:
