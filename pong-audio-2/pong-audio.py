@@ -10,7 +10,7 @@
     Player 1 controls the left paddle: UP (W) DOWN (S)
     Player 2 controls the right paddle: UP (O) DOWN (L)
     HOW TO CONNECT TO HOST AS PLAYER 1
-    > python3 pong-audio.py player --host_ip 128.135.203.42 --host_port 5005 --player_ip 127.0.0.1 --player_port 5007
+    > python3 pong-audio.py player --host_ip 128.135.203.42 --host_port 5005 --player_ip 128.135.203.42 --player_port 5007
     HOW TO CONNECT TO HOST AS PLAYER 2
     > python3 pong-audio.py player --host_ip 127.0.0.1 --host_port 5006 --player_ip 127.0.0.1 --player_port 5008
     about IP and ports: 127.0.0.1 means your own computer, change it to play across computer under the same network. port numbers are picked to avoid conflits.
@@ -174,22 +174,24 @@ def hit():
 def score():
     playsound("goal.mp3",True)
 
-threadcheck = threading.Lock()
+
 
 # used to send messages to host
 if mode == 'player':
     client = udp_client.SimpleUDPClient(host_ip, host_port)
     print("> connected to server at "+host_ip+":"+str(host_port))
 
+threadcheck = threading.Lock()
+
 def locate(pitch):
     global threadcheck
     if threadcheck.locked(): pass
     else: 
-        def start_sound(pitch):
+        def sound(pitch):
             global threadcheck
             with threadcheck:
-                player.play_wave(synthesizer.generate_constant_wave(pitch, .02))
-        threading.Thread(target=lambda:start_sound(pitch)).start()
+                player.play_wave(synthesizer.generate_constant_wave(pitch, .1))
+        threading.Thread(target=lambda:sound(pitch)).start()
 
 # functions receiving messages from host
 def on_receive_ball(address, *args):
@@ -732,13 +734,13 @@ if mode == 'player':
     microphone_thread.start()
     # -------------------------------------#
     if client_1:
-        synth_thread = threading.Thread(target=on_receive_ball, args=[1])
-        synth_thread.daemon = True
-        synth_thread.start()
+        synth_thread1 = threading.Thread(target=on_receive_ball, args=[1])
+        synth_thread1.daemon = True
+        synth_thread1.start()
     if client_2:
-        synth_thread = threading.Thread(target=on_receive_ball, args=[2])
-        synth_thread.daemon = True
-        synth_thread.start() 
+        synth_thread2 = threading.Thread(target=on_receive_ball, args=[2])
+        synth_thread2.daemon = True
+        synth_thread2.start() 
 
 
 # Host: pygame starts
