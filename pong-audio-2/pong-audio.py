@@ -23,12 +23,15 @@ import math
 import random
 import pyglet
 import sys
+from synthesizer import Player, Synthesizer, Waveform
 from playsound import playsound
 import argparse
-
+from pysinewave import SineWave
 from pythonosc import osc_server
 from pythonosc import dispatcher
 from pythonosc import udp_client
+from gtts import gTTS
+import os
 
 mode = ''
 debug = False
@@ -80,6 +83,11 @@ if __name__ == '__main__' :
 client_1 = None
 client_2 = None
 
+
+player = Player()
+player.open_stream()
+synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=1.0, use_osc2=False)
+
 # functions receiving messages from players (game control etc)
 def on_receive_game_level(address, args, l):
     global level
@@ -102,6 +110,7 @@ def on_receive_connection_1(address, args, ip):
     global player_1_ip
     player_1_ip = ip
     client_1 = udp_client.SimpleUDPClient(player_1_ip, player_1_port)
+    text2speech("you are player 1")
     print("> player 1 connected: " + ip)
 
 def on_receive_paddle_2(address, args, paddle):
@@ -113,6 +122,7 @@ def on_receive_connection_2(address, args, ip):
     global player_2_ip
     player_2_ip = ip
     client_2 = udp_client.SimpleUDPClient(player_2_ip, player_2_port)
+    text2speech("you are player 2")
     print("> player 2 connected: " + ip)
 
 dispatcher_1 = dispatcher.Dispatcher()
@@ -132,6 +142,12 @@ dispatcher_2.map("/c", on_receive_connection_2, "c")
 # TODO: add audio output here so that you can play the game eyes-free
 # -------------------------------------#
 #play some fun sounds?
+
+def text2speech(text):
+    speech = gTTS(text,lang="en",slow=False)
+    speech.save("sound.mp3")
+    playsound("sound.mph3")
+
 def hit():
     playsound('hit.wav', False)
 
@@ -143,6 +159,9 @@ if mode == 'player':
 # functions receiving messages from host
 def on_receive_ball(address, *args):
     print("> ball position: (" + str(args[0]) + ", " + str(args[1]) + ")")
+    #find the pitch to play
+    ball_pitch = (args[1]/450)*200+100
+    player.play_wave(synthesizer.generate_constant_wave(ball_pitch, .02))
     pass
 
 def on_receive_paddle(address, *args):
@@ -152,17 +171,21 @@ def on_receive_paddle(address, *args):
 def on_receive_hitpaddle(address, *args):
     # example sound
     hit()
+    text2speech("> ball hit at paddle " + str(args[0]))
     print("> ball hit at paddle " + str(args[0]) )
 
 def on_receive_ballout(address, *args):
+    text2speech("ball went out on left/right side: " + str(args[0]))
     print("> ball went out on left/right side: " + str(args[0]) )
 
 def on_receive_ballbounce(address, *args):
     # example sound
     hit()
+    text2speech("ball bounced on up/down side: " + str(args[0]))
     print("> ball bounced on up/down side: " + str(args[0]) )
 
 def on_receive_scores(address, *args):
+    text2speech(str(args[0]) + " vs. " + str(args[1]))
     print("> scores now: " + str(args[0]) + " vs. " + str(args[1]))
 
 def on_receive_level(address, *args):
@@ -254,6 +277,8 @@ def listen_to_speech():
             if recog_results == "quit":
                 quit = True
                 playsound('quit.mp3')
+            if recog_results == "instruction":
+                playsound("instructions.mph3")
         except sr.UnknownValueError:
             print("[speech recognition] Google Speech Recognition could not understand audio")
         except sr.RequestError as e:
@@ -278,24 +303,20 @@ def sense_microphone():
         # Format the volume output so that at most
         # it has six decimal numbers.
         volume = "{:.6f}".format(volume)
-        #low = 80 
-        #high = 300
-        #box height = 0 - 450
-        scaled_pitch = pitch - 100 * (430 / (300-80))+200
-        if float(volume) != 0:
-            if pitch != 0 and scaled_pitch > 0 and scaled_pitch < 450:
-                client.send_message('/p',scaled_pitch) 
-                 
-            
-        # if volume != 0 or pitch != 0: 
-        #     scaled_pitch =  pitch - 80 * (435 / (300-80))+200
-        #     if scaled_pitch > 0 and scaled_pitch < 435:
-        #         client.send_message('/p',scaled_pitch)
-        #         print("Scaled" + str(scaled_pitch))
+
+        #range is 100-250.    
+        scaled = pitch 
+        if scaled > 250:
+            scaled = 250
+        if scaled < 100: 
+            scaled = 100
+        scaled = ((scaled - 100)/150)*450
+        if volume != 0: 
+            client.send_message('/p',int(scaled))
+
         # uncomment these lines if you want pitch or volume
-        print("pitch "+str(pitch)+" volume "+str(volume))
         if debug:
-             print("pitch "+str(pitch)+" volume "+str(volume))
+             print("pitch "+str(pitch)+" s "+str(volume))
 # -------------------------------------#
 
 # Host game mechanics: no need to change below
@@ -473,6 +494,7 @@ class Model(object):
             client_1.send_message("/ball", [b.x, b.y])
         if (client_2 != None):
             client_2.send_message("/ball", [b.x, b.y])
+    
 
     def toggle_menu(self):
         global game_start
@@ -681,6 +703,9 @@ if mode == 'player':
     microphone_thread.daemon = True
     microphone_thread.start()
     # -------------------------------------#
+    # synth_thread = threading.Thread(target=on_receive_ball, args=[1])
+    # synth_thread.daemon = True
+    # synth_thread.start()
 
 # Host: pygame starts
 if mode == 'host':
