@@ -174,7 +174,7 @@ def hit():
 def score():
     playsound("goal.mp3",True)
 
-threadcheck = threading.lock()
+threadcheck = threading.Lock()
 
 def locate(pitch):
     global threadcheck
