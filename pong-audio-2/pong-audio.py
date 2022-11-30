@@ -720,7 +720,7 @@ if mode == 'player':
         synth_thread.daemon = True
         synth_thread.start()
     if client_2:
-        synth_thread = threading.Thread(target=on_receive_ball, args=[1])
+        synth_thread = threading.Thread(target=on_receive_ball, args=[2])
         synth_thread.daemon = True
         synth_thread.start() 
 
