@@ -1,46 +1,40 @@
 """
     Based on: https://gist.github.com/xjcl/8ce64008710128f3a076
     Modified by PedroLopes and ShanYuanTeng for Intro to HCI class but credit remains with author
-
     HOW TO RUN HOST LOCALLY:
     > python3 pong-audio.py host
-
     HOW TO RUN HOST FOR CONNECTION:
-    > python3 pong-audio.py host --host_ip 127.0.0.1
-
+    > python3 pong-audio.py host --host_ip 128.135.203.42
     HOW TO PLAY ON HOST VISUALLY: 
     Play like a regular pong:
     Player 1 controls the left paddle: UP (W) DOWN (S)
     Player 2 controls the right paddle: UP (O) DOWN (L)
-
     HOW TO CONNECT TO HOST AS PLAYER 1
-    > python3 pong-audio.py player --host_ip 127.0.0.1 --host_port 5005 --player_ip 127.0.0.1 --player_port 5007
-        python3 pong-audio.py player --host_ip 10.150.13.245 --host_port 5005 --player_ip 10.150.13.245 --player_port 5007
+    > python3 pong-audio.py player --host_ip 128.135.203.42 --host_port 5005 --player_ip 128.135.203.42 --player_port 5007
     HOW TO CONNECT TO HOST AS PLAYER 2
-    > python3 pong-audio.py player --host_ip 10.150.13.245 --host_port 5006 --player_ip <IP HERE> --player_port 5008
-
+    > python3 pong-audio.py player --host_ip 127.0.0.1 --host_port 5006 --player_ip 127.0.0.1 --player_port 5008
     about IP and ports: 127.0.0.1 means your own computer, change it to play across computer under the same network. port numbers are picked to avoid conflits.
-
     CODE YOUR AUDIO CONTROL FOR PLAYER!
     
+    python3 pong-audio.py player --host_ip 10.150.13.245 --host_port 5006 --player_ip 128.135.203.42 --player_port 5008
     p.s.: this needs 10x10 image in the same directory: "white_square.png".
 """
 #native imports
 import math
 import random
-from re import I
-from click import pass_context
 import pyglet
-
 import sys
+from synthesizer import Player, Synthesizer, Waveform
 from playsound import playsound
 import argparse
-from synthesizer import Player, Synthesizer, Waveform
-from gtts import gTTS
-
+from pysinewave import SineWave
 from pythonosc import osc_server
 from pythonosc import dispatcher
 from pythonosc import udp_client
+from gtts import gTTS
+import os
+
+# -------------------------------------#
 
 # Player: speech recognition library
 # -------------------------------------#
@@ -108,26 +102,19 @@ if __name__ == '__main__' :
 client_1 = None
 client_2 = None
 
+# sinewave = SineWave(pitch = 12, pitch_per_second = 50, decibels_per_second = 10000)
+player = Player()
+player.open_stream()
+synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=0.3, use_osc2=False)
+
 # functions receiving messages from players (game control etc)
 def on_receive_game_level(address, args, l):
     global level
     level = l
     if (client_1 != None):
         client_1.send_message("/level", l)
-        if level == 1:
-            playsound("easy.mp3")
-        elif level == 2:
-            playsound("hard.mp3")
-        elif level == 3:
-            playsound("insane.mp3")
     if (client_2 != None):
         client_2.send_message("/level", l)
-        if level == 1:
-            playsound("easy.mp3")
-        elif level == 2:
-            playsound("hard.mp3")
-        elif level == 3:
-            playsound("insane.mp3")
 
 def on_receive_game_start(address, args, g):
     global game_start
@@ -142,6 +129,7 @@ def on_receive_connection_1(address, args, ip):
     global player_1_ip
     player_1_ip = ip
     client_1 = udp_client.SimpleUDPClient(player_1_ip, player_1_port)
+    text2speech("you are player 1, say instructions to get started")
     print("> player 1 connected: " + ip)
 
 def on_receive_paddle_2(address, args, paddle):
@@ -153,6 +141,7 @@ def on_receive_connection_2(address, args, ip):
     global player_2_ip
     player_2_ip = ip
     client_2 = udp_client.SimpleUDPClient(player_2_ip, player_2_port)
+    text2speech("you are player 2,say instructions to get started")
     print("> player 2 connected: " + ip)
 
 dispatcher_1 = dispatcher.Dispatcher()
@@ -172,70 +161,79 @@ dispatcher_2.map("/c", on_receive_connection_2, "c")
 # TODO: add audio output here so that you can play the game eyes-free
 # -------------------------------------#
 #play some fun sounds?
-def hit():
-    playsound('hit.wav', False)
 
-player = Player()
-player.open_stream()
-synth = Synthesizer(osc1_waveform=Waveform.triangle, osc1_volume=0.3, use_osc2=False)
-# my_pitch = 200
-# player.play_wave(synth.generate_chord([my_pitch], 10))
+def text2speech(text):
+    speech = gTTS(text,lang="en",slow=False)
+    speech.save("sound.mp3")
+    playsound("sound.mp3")
+
+def hit():
+    text2speech("hit")
+
+
+def score():
+    playsound("goal.mp3",True)
+
+
+
 # used to send messages to host
 if mode == 'player':
     client = udp_client.SimpleUDPClient(host_ip, host_port)
     print("> connected to server at "+host_ip+":"+str(host_port))
 
-is_playing = threading.Lock()
+threadcheck = threading.Lock()
 
-def ball_locator(pitch, time):
-    global is_playing
-    if is_playing.locked(): pass
-    else:
-        def start_sound(pitch,time):
-            global is_playing
-            with is_playing:
-                player.play_wave(synth.generate_constant_wave(pitch, time))
-        threading.Thread(target=lambda: start_sound(pitch, time)).start()
+def locate(pitch):
+    global threadcheck
+    if threadcheck.locked(): pass
+    else: 
+        def sound(pitch):
+            global threadcheck
+            with threadcheck:
+                player.play_wave(synthesizer.generate_constant_wave(pitch, .1))
+        threading.Thread(target=lambda:sound(pitch)).start()
 
 # functions receiving messages from host
 def on_receive_ball(address, *args):
-    # print("> ball position: (" + str(args[0]) + ", " + str(args[1]) + ")")
-    y_pos = args[1]
-    pitch = (600 - y_pos) / 1.5
-    # print(f"pitch: {pitch}")
-    ball_locator(pitch, 0.2)
+    print("> ball position: (" + str(args[0]) + ", " + str(args[1]) + ")")
+    #find the pitch to play
+    ball_pitch = (args[1]/450)*150+100
+    # sinewave.set_pitch(ball_pitch)
+    # sinewave.set_volume(min(350,args[0]))
+    # print(ball_pitch)
+    locate(ball_pitch)
     pass
 
 def on_receive_paddle(address, *args):
-    # print("> paddle position: (" + str(args[0]) + ", " + str(args[1]) + ")")
+    print("> paddle position: (" + str(args[0]) + ", " + str(args[1]) + ")")
     pass
 
 def on_receive_hitpaddle(address, *args):
     # example sound
+
+    text2speech("paddle" + str(args[0]))
     hit()
-    playsound("dong.mp3")
     print("> ball hit at paddle " + str(args[0]) )
 
 def on_receive_ballout(address, *args):
+    # score()
+    score()
     print("> ball went out on left/right side: " + str(args[0]) )
 
 def on_receive_ballbounce(address, *args):
     # example sound
-    hit()
+    text2speech("ball bounced")
     print("> ball bounced on up/down side: " + str(args[0]) )
 
 def on_receive_scores(address, *args):
-    print("playing sounds now")
-    new_score_speech = "scores now: " + str(args[0]) + " vs. " + str(args[1])
-    score_tts = gTTS(text=new_score_speech, lang='en', slow=False)
-    score_tts.save("score.mp3")
-    playsound("score.mp3")
-    print("> scores now: " + str(args[0]) + " vs. " + str(args[1]))
-
+    text2speech("score" + str(args[0]) + " to " + str(args[1]))
+    print("> scores now: " + str(args[0]) + " to " + str(args[1]))
 
 def on_receive_level(address, *args):
+    text2speech()
     print("> level now: " + str(args[0]))
 
+    
 dispatcher_player = dispatcher.Dispatcher()
 dispatcher_player.map("/ball", on_receive_ball)
 dispatcher_player.map("/paddle", on_receive_paddle)
@@ -244,8 +242,6 @@ dispatcher_player.map("/ballbounce", on_receive_ballbounce)
 dispatcher_player.map("/hitpaddle", on_receive_hitpaddle)
 dispatcher_player.map("/scores", on_receive_scores)
 dispatcher_player.map("/level", on_receive_level)
-# -------------------------------------#
-
 
 
 # PyAudio object.
@@ -269,6 +265,7 @@ p1_score = 0
 p2_score = 0
 
 
+
 # Player: speech recognition functions using google api
 # TODO: you can use this for input, add function like "client.send_message()" to control the host game
 # -------------------------------------#
@@ -286,27 +283,32 @@ def listen_to_speech():
             # to use another API key, use `r.recognize_google(audio, key="GOOGLE_SPEECH_RECOGNITION_API_KEY")`
             # instead of `r.recognize_google(audio)`
             recog_results = r.recognize_google(audio)
-            res_arr = recog_results.split()
             print("[speech recognition] Google Speech Recognition thinks you said \"" + recog_results + "\"")
             # if recognizing quit and exit then exit the program
-            if "play" in res_arr or "start" in res_arr or "begin" in res_arr:
+            if recog_results == "play" or recog_results == "start":
                 client.send_message('/g', 1)
-
-            if "easy" in res_arr:
-                client.send_message('/l', 1)
-            
-            if "hard" in res_arr:
-                client.send_message('/l', 2)
-
-            if "insane" in res_arr:
-                client.send_message('/l', 3)
-
-            if "pause" in res_arr:
+                playsound('play.mp3')
+            if recog_results == "pause":
                 client.send_message('/g', 0)
-            
-            if recog_results == "quit" or recog_results == "exit":
+                playsound('paused.mp3')
+            if recog_results == "resume":
+                client.send_message('/g', 1)
+                playsound('resuming.mp3')
+            if recog_results == "easy":
+                client.send_message('/l',1)
+                playsound('levelEasy.mp3')
+            if recog_results == "hard":
+                client.send_message('/l',2)
+                playsound('levelHard.mp3')
+            if recog_results == "insane":
+                client.send_message('/l',3)
+                playsound('levelIsane.mp3')
+            if recog_results == "quit":
                 quit = True
+                playsound('quit.mp3')
                 exit(0)
+            if recog_results == "instruction":
+                playsound("instructions.mp3",True)
         except sr.UnknownValueError:
             print("[speech recognition] Google Speech Recognition could not understand audio")
         except sr.RequestError as e:
@@ -320,23 +322,31 @@ def sense_microphone():
     global quit
     global debug
     while not quit:
-        # print("hello world")
         data = stream.read(1024,exception_on_overflow=False)
-        samples = num.frombuffer(data,
+        samples = num.fromstring(data,
             dtype=aubio.float_type)
-        # Compute the pitch of the  microphone input
+
+        # Compute the pitch of the microphone input
         pitch = pDetection(samples)[0]
         # Compute the energy (volume) of the mic input
-        volume_float = num.sum(samples**2)/len(samples)
+        volume = num.sum(samples**2)/len(samples)
         # Format the volume output so that at most
         # it has six decimal numbers.
-        volume = "{:.6f}".format(volume_float)
+        volume = "{:.6f}".format(volume)
 
-        if volume_float > 0.0001:
-            client.send_message('/p', max(0, 600 - int(pitch * 1.5)))
+        #range is 100-250.    
+        scaled = pitch 
+        if scaled > 250:
+            scaled = 250
+        if scaled < 100: 
+            scaled = 100
+        scaled = ((scaled - 100)/150)*450
+        if volume != 0: 
+            client.send_message('/p',int(scaled))
+
         # uncomment these lines if you want pitch or volume
         if debug:
-            print("pitch "+str(pitch)+" volume "+str(volume))
+             print("pitch "+str(pitch)+" s "+str(volume))
 # -------------------------------------#
 
 # Host game mechanics: no need to change below
@@ -497,7 +507,6 @@ class Model(object):
             Update ball position with post-collision detection.
             I.e. Let the ball move out of bounds and calculate
             where it should have been within bounds.
-
             When bouncing off a paddle, take player velocity into
             consideration as well. Add a small factor of random too.
         """
@@ -515,6 +524,7 @@ class Model(object):
             client_1.send_message("/ball", [b.x, b.y])
         if (client_2 != None):
             client_2.send_message("/ball", [b.x, b.y])
+    
 
     def toggle_menu(self):
         global game_start
@@ -723,19 +733,15 @@ if mode == 'player':
     microphone_thread.daemon = True
     microphone_thread.start()
     # -------------------------------------#
-    # thread to play sound based on ball location
     if client_1:
-        sound_thread1 = threading.Thread(target=on_receive_ball, args=[1])
-        sound_thread1.daemon = True
-        sound_thread1.start()
+        synth_thread1 = threading.Thread(target=on_receive_ball, args=[1])
+        synth_thread1.daemon = True
+        synth_thread1.start()
     if client_2:
-        sound_thread2 = threading.Thread(target=on_receive_ball, args=[2])
-        sound_thread2.daemon = True
-        sound_thread2.start()
+        synth_thread2 = threading.Thread(target=on_receive_ball, args=[2])
+        synth_thread2.daemon = True
+        synth_thread.start() 
 
-    # sound_thread2 = threading.Thread(target=on_receive_ball, args=[2])
-    # sound_thread2.daemon = True
-    # sound_thread2.start()
 
 # Host: pygame starts
 if mode == 'host':
