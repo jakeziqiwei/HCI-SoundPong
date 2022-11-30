@@ -24,7 +24,6 @@ import random
 import pyglet
 import sys
 from pysinewave import SineWave
-from synthesizer import Player, Synthesizer, Waveform
 from playsound import playsound
 import argparse
 from pysinewave import SineWave
@@ -111,7 +110,7 @@ def on_receive_connection_1(address, args, ip):
     global player_1_ip
     player_1_ip = ip
     client_1 = udp_client.SimpleUDPClient(player_1_ip, player_1_port)
-    text2speech("you are player 1")
+    text2speech("you are player 1, say instructions to get started")
     print("> player 1 connected: " + ip)
 
 def on_receive_paddle_2(address, args, paddle):
@@ -123,7 +122,7 @@ def on_receive_connection_2(address, args, ip):
     global player_2_ip
     player_2_ip = ip
     client_2 = udp_client.SimpleUDPClient(player_2_ip, player_2_port)
-    text2speech("you are player 2")
+    text2speech("you are player 2,say instructions to get started")
     print("> player 2 connected: " + ip)
 
 dispatcher_1 = dispatcher.Dispatcher()
@@ -154,7 +153,7 @@ def hit():
 
 
 def score():
-    playsound("goal.mp3")
+    playsound("goal.mp3",True)
 
 # used to send messages to host
 if mode == 'player':
@@ -167,7 +166,7 @@ def on_receive_ball(address, *args):
     #find the pitch to play
     ball_pitch = (args[1]/450)*150+100
     sinewave.set_pitch(ball_pitch)
-    sinewave.set_volume(args[0])
+    sinewave.set_volume(min(350,args[0]))
     print(ball_pitch)
     # player.play_wave(synthesizer.generate_constant_wave(ball_pitch, .02))
     pass
@@ -185,6 +184,7 @@ def on_receive_hitpaddle(address, *args):
 
 def on_receive_ballout(address, *args):
     # score()
+    score()
     print("> ball went out on left/right side: " + str(args[0]) )
 
 def on_receive_ballbounce(address, *args):
@@ -197,6 +197,7 @@ def on_receive_scores(address, *args):
     print("> scores now: " + str(args[0]) + " to " + str(args[1]))
 
 def on_receive_level(address, *args):
+    text2speech()
     print("> level now: " + str(args[0]))
 
     
@@ -287,7 +288,7 @@ def listen_to_speech():
                 quit = True
                 playsound('quit.mp3')
             if recog_results == "instruction":
-                playsound("instructions.mp3")
+                playsound("instructions.mp3",True)
         except sr.UnknownValueError:
             print("[speech recognition] Google Speech Recognition could not understand audio")
         except sr.RequestError as e:
@@ -717,9 +718,9 @@ if mode == 'player':
     microphone_thread.daemon = True
     microphone_thread.start()
     # -------------------------------------#
-    # synth_thread = threading.Thread(target=on_receive_ball, args=[1])
-    # synth_thread.daemon = True
-    # synth_thread.start()
+    synth_thread = threading.Thread(target=on_receive_ball, args=[1])
+    synth_thread.daemon = True
+    synth_thread.start()
 
 # Host: pygame starts
 if mode == 'host':
