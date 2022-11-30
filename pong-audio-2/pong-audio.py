@@ -12,7 +12,7 @@
     HOW TO CONNECT TO HOST AS PLAYER 1
     > python3 pong-audio.py player --host_ip 127.0.0.1 --host_port 5005 --player_ip 127.0.0.1 --player_port 5007
     HOW TO CONNECT TO HOST AS PLAYER 2
-    > python3 pong-audio.py player --host_ip 127.0.0.1 --host_port 5006 --player_ip 127.0.0.1 --player_port 5008
+    > python3 pong-audio.py player --host_ip 127.0.0.1 --host_port 5006 --player_ip 127.0.0.1 --player_port 500                    8
     about IP and ports: 127.0.0.1 means your own computer, change it to play across computer under the same network. port numbers are picked to avoid conflits.
     CODE YOUR AUDIO CONTROL FOR PLAYER!
     
@@ -23,7 +23,7 @@ import math
 import random
 import pyglet
 import sys
-from pysinewave import SineWave
+from synthesizer import Player, Synthesizer, Waveform
 from playsound import playsound
 import argparse
 from pysinewave import SineWave
@@ -83,10 +83,10 @@ if __name__ == '__main__' :
 client_1 = None
 client_2 = None
 
-sinewave = SineWave(pitch = 12, pitch_per_second = 50, decibels_per_second = 10000)
-# player = Player()
-# player.open_stream()
-# synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=1.0, use_osc2=False)
+# sinewave = SineWave(pitch = 12, pitch_per_second = 50, decibels_per_second = 10000)
+player = Player()
+player.open_stream()
+synthesizer = Synthesizer(osc1_waveform=Waveform.sine, osc1_volume=1.0, use_osc2=False)
 
 # functions receiving messages from players (game control etc)
 def on_receive_game_level(address, args, l):
@@ -165,10 +165,10 @@ def on_receive_ball(address, *args):
     print("> ball position: (" + str(args[0]) + ", " + str(args[1]) + ")")
     #find the pitch to play
     ball_pitch = (args[1]/450)*150+100
-    sinewave.set_pitch(ball_pitch)
-    sinewave.set_volume(min(350,args[0]))
-    print(ball_pitch)
-    # player.play_wave(synthesizer.generate_constant_wave(ball_pitch, .02))
+    # sinewave.set_pitch(ball_pitch)
+    # sinewave.set_volume(min(350,args[0]))
+    # print(ball_pitch)
+    player.play_wave(synthesizer.generate_constant_wave(ball_pitch, .02))
     pass
 
 def on_receive_paddle(address, *args):
@@ -504,21 +504,16 @@ class Model(object):
             client_1.send_message("/ball", [b.x, b.y])
         if (client_2 != None):
             client_2.send_message("/ball", [b.x, b.y])
-        # ball_pitch = (b.y/450)*200+100
-        # print(ball_pitch)
-        # sinewave.set_pitch(ball_pitch)
     
 
     def toggle_menu(self):
         global game_start
         if (self.menu != 0):
             self.menu = 0
-            sinewave.stop()
             game_start = 0
             self.paused = True
         else:
             self.menu = 1
-            sinewave.play()
             game_start = 1
             self.paused = False
 
@@ -718,9 +713,9 @@ if mode == 'player':
     microphone_thread.daemon = True
     microphone_thread.start()
     # -------------------------------------#
-    synth_thread = threading.Thread(target=on_receive_ball, args=[1])
-    synth_thread.daemon = True
-    synth_thread.start()
+    # synth_thread = threading.Thread(target=on_receive_ball, args=[1])
+    # synth_thread.daemon = True
+    # synth_thread.start()
 
 # Host: pygame starts
 if mode == 'host':
