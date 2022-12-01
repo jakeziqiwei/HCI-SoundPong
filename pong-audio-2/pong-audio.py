@@ -225,7 +225,7 @@ def on_receive_scores(address, *args):
     print("> scores now: " + str(args[0]) + " to " + str(args[1]))
 
 def on_receive_level(address, *args):
-    text2speech()
+
     print("> level now: " + str(args[0]))
 
     
@@ -302,7 +302,7 @@ def listen_to_speech():
                 quit = True
                 playsound('quit.mp3')
                 exit(0)
-            if recog_results == "instruction":
+            if recog_results == "instruction" or recog_results == "instructions":
                 playsound("instructions.mp3",True)
         except sr.UnknownValueError:
             print("[speech recognition] Google Speech Recognition could not understand audio")
